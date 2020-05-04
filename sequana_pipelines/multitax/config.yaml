@@ -1,0 +1,39 @@
+# ============================================================================
+# Config file for Quality Control
+# ==========================================[ Sections for the users ]========
+#
+# One of input_directory, input_pattern and input_samples must be provided
+# If input_directory provided, use it otherwise if input_pattern provided,
+# use it, otherwise use input_samples.
+# ============================================================================
+
+
+input_directory: /home/cokelaer/Temp/test/B3910
+input_readtag: _R[12]_
+input_pattern: "*fastq.gz"
+#'4[6,7]*fastq.gz'
+
+
+##############################################################################
+# Your section
+#
+# :Parameters:
+#
+# - options: string with any valid FastQC options
+sequana_taxonomy:
+    databases:
+        - 
+    level: DEBUG
+
+
+summary_plot:
+    kind: barh
+    width: 0.8
+
+multiqc:
+    indir: .
+    options: -p -f -m sequana_kraken
+
+
+dendogram:
+    sample_file: #sample.txt

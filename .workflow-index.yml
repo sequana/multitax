@@ -1,0 +1,10 @@
+language: Snakemake
+name: sequana_multitax
+description: taxonomy, sequana, kraken, snakemake
+url: https://github.com/sequana/sequana_multitax/blob/master/sequana_pipelines/multitax/multitax.rules
+categories: [NGS, snakemake, sequana]
+authors:
+    - firstname: Thomas
+      lastname: Cokelaer
+      email: thomas.cokelaer@pasteur.fr
+
