@@ -54,8 +54,8 @@ This pipelines requires the following executable(s):
 - kraken2
 - sequana_taxonomy
 
-.. image:: https://raw.githubusercontent.com/sequana/sequana_multitax/blob/master/sequana_pipelines/multitax/dag.png
 
+.. image::   https://github.com/sequana/sequana_multitax/raw/master/sequana_pipelines/multitax/dag.png
 
 Details
 ~~~~~~~~~
