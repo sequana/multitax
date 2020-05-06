@@ -29,8 +29,7 @@ __taxonomy__output_html = '{sample}/summary.html'
 __taxonomy__output_csv = '{sample}/kraken/kraken.csv'
 
 rule all:
-    input: expand(__taxonomy__output_summary, sample=manager.samples),
-            "outputs/dendogram.png", "multiqc/multiqc_report.html", "rulegraph/rulegraph.svg"
+    input: "outputs/dendogram.png", "multiqc/multiqc_report.html", "rulegraph/rulegraph.svg"
 
 rule sequana_taxonomy:
     input: __taxonomy__input_fastq
@@ -116,12 +115,19 @@ rule dendogram:
             #for sample, category in zip(df['sample'], df['category']):
             for sample, category in zip(df['sample'], df['codes']):
                 h.category_column[sample] = category
-        h.plot(colorbar_position="top left")
-
         try:
+            h.plot(colorbar_position="top left")
             pylab.savefig(output[0], dpi=200)
+            with open("outputs/dendogram.info", "w") as fout:
+                fout.write("ok")
         except:
-            pass
+            from sequana import sequana_data
+            data = sequana_data("no_data.png")
+            import shutil
+            shutil.copy(data, output[0])
+            with open("outputs/dendogram.info", "w") as fout:
+                fout.write("failed")
+
 
 
 __conda__output = "inputs/requirements.txt"
@@ -145,9 +151,9 @@ onsuccess:
     <img style="height:50%;width:50%" src="outputs/proportion_kraken.png"></img><br>"""
 
 
-    if len(manager.samples) == 1:
-       pass 
-    else:
+    data = open("outputs/dendogram.info").readline()
+    print(data)
+    if data == "ok":
         intro += """<img style="height:50%;width:50%" src="outputs/dendogram.png"></img><br>"""
 
     intro +="""
