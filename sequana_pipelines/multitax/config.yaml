@@ -27,7 +27,7 @@ sequana_taxonomy:
 
 summary_plot:
     kind: barh
-    width: 0.8
+    width: 1
 
 multiqc:
     indir: .

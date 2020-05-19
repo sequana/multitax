@@ -27,7 +27,7 @@ __taxonomy__output_html = '{sample}/summary.html'
 __taxonomy__output_csv = '{sample}/kraken/kraken.csv'
 
 rule all:
-    input: "outputs/dendogram.png", "multiqc/multiqc_report.html", ".sequana/rulegraph.svg"
+    input: "outputs/dendogram.png", "multiqc/multiqc_report.html", ".sequana/rulegraph.svg", "outputs/proportion_kraken.png"
 
 rule sequana_taxonomy:
     input: __taxonomy__input_fastq
