@@ -93,7 +93,7 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
             image=__summary_plot_db__output_image,
         run:
             from sequana.kraken import MultiKrakenResults2
-            k = MultiKrakenResults2(manager.samples)
+            k = MultiKrakenResults2(input, manager.samples)
             k.plot_stacked_hist(output.image, dpi=200, ytick_fontsize=11)
 
 
@@ -189,19 +189,20 @@ onsuccess:
         <div style="width:48%; float:left"><p>Proportion of reads in virus, bacteria, human and unclassified categories:</p>
     """
     img = SummaryModule2.png_to_embedded_png("dummy_self", "outputs/proportion_kraken.png", 
-        style="height:40%")
+        style="max-height:60%; max-width:80%")
     intro += img + "</div>"
     if len(config['sequana_taxonomy']['databases'])>1:
         intro += """
-            <div style="width:48%; float:right"><p>Proportion of reads found in each databases:</p>
+            <div style="width:48%; float:right"><p>Proportion of reads found in each databases:<br></p>
         """
         img = SummaryModule2.png_to_embedded_png("dummy_self", "outputs/proportion_dbs.png", 
-            style=" height:40%")
+                    style="max-height:60%; max-width:80%")
         intro += img + "</div>"
 
 
         from sequana.kraken import MultiKrakenResults2
-        k = MultiKrakenResults2(manager.samples)
+        k = MultiKrakenResults2(["{}/kraken/summary.json".format(x) for x in manager.samples], 
+            manager.samples)
         from sequana.utils.datatables_js import DataTable
         df = k.get_df()
         links = ["""{}/summary.html""".format(sample) for sample in df.columns]
