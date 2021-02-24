@@ -181,7 +181,7 @@ localrules: multiqc, rulegraph, summary_plot, dendogram, summary_plot_db
 onsuccess:
 
     from sequana import logger
-    logger.level = "INFO"
+    logger.setLevel("INFO")
 
     # This should create the stats plot and the Makefile
     manager.teardown()
