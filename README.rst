@@ -104,6 +104,7 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.9.1     * fix a logger issue 
 0.9.0     * fix plot summary dbs (sample names). Add options in schema+config
             file to tune the image if required.
           * HTML now includes links towards data that generates the top plots
