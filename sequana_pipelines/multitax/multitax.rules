@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -13,13 +12,16 @@
 ##############################################################################
 import os
 import sequana
-from sequana import snaketools as sm
+from sequana_pipetools import snaketools as sm
 from sequana import sequana_data
 
-# This must be defined before the include
+
+# ========================================================= The main config file
+#
 configfile: "config.yaml"
 
-# A convenient manager
+# ================================================== The sequana pipeline manager
+# 
 manager = sm.PipelineManager("multitax", config)
 manager.setup(globals(), mode="warning")
 
@@ -38,23 +40,30 @@ if len(config['sequana_taxonomy']["databases"]) > 1:
 
 
 
-rule all:
-    input: 
-        expected_output,
-        expand("{sample}/kraken/unclassified_subsample.fasta", sample=sorted(manager.samples)),
-        expand("{sample}/blast/blast.tsv", sample=sorted(manager.samples)),
-        expand("{sample}/blast/krona.txt", sample=sorted(manager.samples)),
-        expand("{sample}/blast/text.krona.html", sample=sorted(manager.samples))
+if config['blast']['do']:
+    rule all:
+        input:
+            expected_output,
+            expand("{sample}/kraken/unclassified_subsample.fasta", sample=sorted(manager.samples)),
+            expand("{sample}/blast/blast.tsv", sample=sorted(manager.samples)),
+            expand("{sample}/blast/krona.txt", sample=sorted(manager.samples)),
+            expand("{sample}/blast/text.krona.html", sample=sorted(manager.samples))
+else:
+    rule all:
+        input:
+            expected_output,
 
 
 
 def get_sequana_taxonomy_unclassified():
+
     if manager.paired:
         return "{sample}/kraken/unclassified_1.fastq"
     else:
         return "{sample}/kraken/unclassified.fastq"
 
-
+# ================================================== Taxonomy
+#
 rule sequana_taxonomy:
     input: manager.getrawdata()
     output:
@@ -63,11 +72,11 @@ rule sequana_taxonomy:
         summary      = __taxonomy__output_summary,
         summary_json = __taxonomy__output_summary_json,
         unclassified = get_sequana_taxonomy_unclassified()
-    threads: 4
+    threads: config['sequana_taxonomy']['threads']
     run:
         outdir = output.html.split("/",1)[0]
         cmd = "sequana_taxonomy --file1 {input[0]} "
-        if len(input) == 2:
+        if manager.paired == 2:
             cmd += " --file2 {input[1]} "
 
         if config["sequana_taxonomy"]["confidence"] != 0:
@@ -79,9 +88,13 @@ rule sequana_taxonomy:
                 assert os.path.exists(this), "databases {} does not exits".format(this)
             cmd += " {} ".format(this)
         cmd += " --output-directory {} --level {}".format(wildcards.sample, config['sequana_taxonomy']['level'])
+
+
+        # we will save the unclassified files whatsover
         if config['sequana_taxonomy']['store_unclassified']:
-            if len(input) == 2:
-                cmd += " --unclassified-out unclassified_#.fastq"  # this replaces # with 1 and 2
+
+            if manager.paired:
+                cmd += " --unclassified-out unclassified_#.fastq"  # this syntax replaces # with 1 and 2
             else:
                 cmd += " --unclassified-out unclassified.fastq"
         cmd += config['sequana_taxonomy']['options']
@@ -89,12 +102,13 @@ rule sequana_taxonomy:
         shell(cmd)
 
 
-__summary_plot__output_summary = "outputs/sequana_kraken_summary.json"
-__summary_plot__output_image = "outputs/proportion_kraken.png"
-
-
+# ================================================== Blast
+#
+# for testing:
+# input is measles + input
+#  makeblastdb -in measles.fa -dbtype nucl -out temp -parse-seqids 
+#
 if config['blast']['do']:
-
     rule unclassified_to_fasta:
         input: get_sequana_taxonomy_unclassified()
         output: "{sample}/kraken/unclassified_subsample.fasta"
@@ -104,25 +118,21 @@ if config['blast']['do']:
             """
             awk '{{if(NR%4==1) {{printf(">%s\\n",substr($0,2));}} else if(NR%4==2) print;}}' {input} | head -n {params.nreads} >  {output}   || echo "wierd"
 
-
-
             """
 
     rule blast_fasta:
         input: "{sample}/kraken/unclassified_subsample.fasta"
         output: "{sample}/blast/blast.tsv"
         params:
-            outfmt=6, # cannot be changed this expected input of blast_anlaysis is TSV
+            outfmt=6, # cannot be changed. expected input of blast_anlaysis is TSV
             db=os.environ['BLASTDB'] + os.sep + config['blast']['database'],
             fields="qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids"
         threads: 4
         shell:
             """
             # requires BLASTDB to be defined !
-            echo $BLASTDB
             blastn -query {input[0]} -db {params.db} -num_threads {threads} \
                 -outfmt "{params.outfmt} {params.fields}" > {output[0]}
-
             """
 
     rule blast_analysis:
@@ -131,14 +141,13 @@ if config['blast']['do']:
             "{sample}/blast/blast_summary.csv",
             "{sample}/blast/krona.txt"
         run:
-
             from sequana_pipelines.multitax.blast import remove_duplicates
             df = remove_duplicates(input[0])
             df.to_csv(output[0])
             from sequana_pipelines.multitax.blast import krona
             krona(output[0], output[1])
 
-    rule krona_visu:
+    rule krona:
         input:
             "{sample}/blast/krona.txt"
         output:
@@ -148,11 +157,13 @@ if config['blast']['do']:
             ktImportText {input} -o {output}
             """
 
+# ================================================== summary plot
+# 
 rule summary_plot:
     input: expand("{sample}/kraken/kraken.csv", sample=sorted(manager.samples))
     output:
-        image=__summary_plot__output_image,
-        data = __summary_plot__output_summary
+        image="outputs/proportion_kraken.png",
+        data = "outputs/sequana_kraken_summary.json"
     run:
         from sequana import MultiKrakenResults, MultiKrakenResults2
         k = MultiKrakenResults(input, sample_names=sorted(manager.samples))
@@ -197,14 +208,13 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
 
 
 
-__multiqc__input = expand("{sample}/kraken/kraken.csv", sample=sorted(manager.samples))
-__multiqc__output = "multiqc/multiqc_report.html"
-include: sm.modules["multiqc/2.0"]
-
 
 """
+# ================================================== dendogram not useful but
+# kept for book-keeping
+# 
 rule dendogram:
-    input: __summary_plot__output_summary
+    input: "outputs/sequana_kraken_summary.json"
     output: "outputs/dendogram.png"
     params:
         sample_file=config["dendogram"]["sample_file"]
@@ -214,7 +224,6 @@ rule dendogram:
         import pylab
         df = pd.DataFrame(data)
         if len(manager.samples.keys()) == 1:
-            from sequana import sequana_data
             data = sequana_data("no_data.png")
             import shutil
             shutil.copy(data, output[0])
@@ -236,7 +245,6 @@ rule dendogram:
             with open("outputs/dendogram.info", "w") as fout:
                 fout.write("ok")
         except:
-            from sequana import sequana_data
             data = sequana_data("no_data.png")
             import shutil
             shutil.copy(data, output[0])
@@ -244,12 +252,15 @@ rule dendogram:
                 fout.write("failed")
 """
 
+# ========================================================== multiqc
+#
+sequana_multiqc_input = expand("{sample}/kraken/kraken.csv", sample=sorted(manager.samples))
+include: sm.modules["multiqc/2.0"]
 
-__conda__output = "inputs/requirements.txt"
-include: sm.modules['conda']   # Create requirements.txt(dependencies)
-__rulegraph__input = manager.snakefile
-__rulegraph__output = ".sequana/rulegraph.svg"
-__rulegraph__mapper = {"multiqc": "../multiqc/multiqc_report.html"}
+
+# ========================================================== rulegraph
+#
+sequana_rulegraph_mapper = {"multiqc": "../multiqc/multiqc_report.html"}
 include: sm.modules['rulegraph']
 
 
@@ -264,7 +275,7 @@ onsuccess:
 
     # This should create the stats plot and the Makefile
     manager.teardown()
-    manager.clean_multiqc(__multiqc__output)
+    manager.clean_multiqc("multiqc/multiqc_report.html")
 
     # main HTML report:
     from sequana.modules_report.summary import SummaryModule2
@@ -362,7 +373,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
 
     from sequana_pipelines import multitax
     data = {"name": "multitax",
-            "rulegraph": __rulegraph__output,
+            "rulegraph": ".sequana/rulegraph.svg",
             "stats": "stats.txt",
             "pipeline_version": multitax.version
             }
@@ -374,6 +385,17 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
                     style="align:center; width:30%; height:30%", alt=sample, title=sample)
         intro += '<a href="{}/summary.html">'.format(sample) + image + '</a>'
 
+    # Now the final report. add the original command in the HTML report
+    try:
+        command = ""
+        with open(".sequana/info.txt", "r") as fin:
+            for line in fin:
+                if not line.startswith("#"):
+                     command += line
+        intro += f"<h2>Command used</h2>{command}"
+    except Exception:
+        pass
+
     s = SummaryModule2(data, intro=intro)
 
 
@@ -381,4 +403,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     shell("rm -rf rulegraph")
 
 onerror:
-    print("An error occurred. See message above.")
+    from sequana_pipetools.errors import PipeError
+    p = PipeError("multitax")
+    p.status()
+
