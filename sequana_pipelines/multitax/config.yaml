@@ -21,10 +21,23 @@ input_pattern: "*fastq.gz"
 sequana_taxonomy:
     databases:
         - 
-    level: DEBUG
+    level: INFO
     confidence: 0
     store_unclassified: true
     options: ""
+    threads: 4
+
+
+##############################################################################
+# sblast
+#
+# :Parameters:
+#
+# - database: expect the BLASTDB environment variable to be define
+blast:
+    do: false
+    nreads: 1000
+    database: nt 
 
 summary_plot:
     kind: barh
@@ -46,9 +59,9 @@ summary_plot_db:
     alpha: 0.8
 
 multiqc:
-    indir: .
-    options: -p -f -m sequana_kraken
+    input_directory: .
+    options: -p -f
+    modules: sequana_kraken
+    config_file: ""
 
 
-dendogram:
-    sample_file: #sample.txt
