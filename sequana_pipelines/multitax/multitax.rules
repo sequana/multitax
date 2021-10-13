@@ -21,7 +21,7 @@ from sequana import sequana_data
 configfile: "config.yaml"
 
 # ================================================== The sequana pipeline manager
-# 
+#
 manager = sm.PipelineManager("multitax", config)
 manager.setup(globals(), mode="warning")
 
@@ -37,6 +37,12 @@ expected_output = ["multiqc/multiqc_report.html",
 
 if len(config['sequana_taxonomy']["databases"]) > 1:
     expected_output += ["outputs/proportion_dbs.png"]
+
+
+
+if config['blast']['do'] and not config['sequana_taxonomy']['store_unclassified']:
+    logger.error("You set blast section so you must set sequana_taxonomy/store_unclassified to true in the configuration file")
+    sys.exit(1)
 
 
 
@@ -91,11 +97,12 @@ rule sequana_taxonomy:
 
         # we will save the unclassified files whatsover
         if config['sequana_taxonomy']['store_unclassified']:
-
             if manager.paired:
                 cmd += " --unclassified-out unclassified_#.fastq"  # this syntax replaces # with 1 and 2
             else:
                 cmd += " --unclassified-out unclassified.fastq"
+        else:
+            shell(f"touch {output.unclassified}")
         cmd += config['sequana_taxonomy']['options']
 
         shell(cmd)
