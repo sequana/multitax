@@ -115,7 +115,9 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
-0.9.2    * add --update-taxonomy DB option
+0.10.0    * uses new sequana wrappers and framework
+          * add ability to run blast on unclassified reads
+0.9.2     * add --update-taxonomy DB option
           * add --store-unclassified option
 0.9.1     * fix a logger issue 
 0.9.0     * fix plot summary dbs (sample names). Add options in schema+config

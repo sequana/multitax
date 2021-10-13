@@ -89,7 +89,6 @@ rule sequana_taxonomy:
             cmd += " {} ".format(this)
         cmd += " --output-directory {} --level {}".format(wildcards.sample, config['sequana_taxonomy']['level'])
 
-
         # we will save the unclassified files whatsover
         if config['sequana_taxonomy']['store_unclassified']:
 
@@ -105,8 +104,7 @@ rule sequana_taxonomy:
 # ================================================== Blast
 #
 # for testing:
-# input is measles + input
-#  makeblastdb -in measles.fa -dbtype nucl -out temp -parse-seqids 
+# makeblastdb -in measles.fa -dbtype nucl -out temp -parse-seqids 
 #
 if config['blast']['do']:
     rule unclassified_to_fasta:
@@ -360,7 +358,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     htmltable = datatable.create_datatable(float_format="%0.3f")
     intro += """<div style="clear:both"><hr>"""+js + htmltable + "</div>"
 
-    # Individual reports 
+    # Individual reports
     intro +="""
     <h2>Individual taxonomic reports <a id="kraken"></a></h2>
     <div style="width:80%">Each of the sample ({} in total) was analysed independently using {} databases. Here below you can find the links towards each analysis. You can either click on the link or the image to open a new report. The report includes a table with all taxon found as well as their full lineage as provided by Kraken analysis tool. A dynamic plot based on Kroan allows you to explore the results interactively. </div>
@@ -369,6 +367,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     intro += "<ul>"
     for sample in sorted(manager.samples):
         intro += """<li><a href="{}/summary.html">{} individual report</a></li>""".format(sample, sample)
+
     intro += "</ul>"
 
     from sequana_pipelines import multitax
@@ -397,7 +396,6 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
         pass
 
     s = SummaryModule2(data, intro=intro)
-
 
     shell("chmod -R g+w .")
     shell("rm -rf rulegraph")
