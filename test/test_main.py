@@ -30,7 +30,7 @@ def test_standalone_script():
     from sequana import sequana_config_path
     sys.argv = ["test", "--input-directory", sharedir, 
             "--working-directory", directory.name, "--force", "--databases",
-            sequana_config_path + "/kraken_toydb"]
+            "toydb"]
     m.main()
 
 
