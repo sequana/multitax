@@ -55,7 +55,7 @@ mapping:
 
     "multiqc":
         type: map
-         mapping:
+        mapping:
             "options":
                 type: str
             "modules":
