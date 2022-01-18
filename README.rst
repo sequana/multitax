@@ -1,9 +1,22 @@
+
+
+.. image:: https://badge.fury.io/py/sequana-multitax.svg
+     :target: https://pypi.python.org/pypi/sequana_multitax
+
+.. image:: http://joss.theoj.org/papers/10.21105/joss.00352/status.svg
+    :target: http://joss.theoj.org/papers/10.21105/joss.00352
+    :alt: JOSS (journal of open source software) DOI
+
+.. image:: https://github.com/sequana/multitax/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/sequana/multitax/actions/workflows/main.yaml 
+
+
 This is is the **multitax** pipeline from the `Sequana <https://sequana.readthedocs.org>`_ project
 
 :Overview: Runs taxonomic analysis on a set of samples using sequana_taxonomy (kraken behing the scene)
 :Input: A set of Fastq files
-:Output: HTML report for each sample and a summary HTML report for all (multiqc +  dendogram)
-:Status: draft
+:Output: HTML report for each sample and a summary HTML report for all samples.
+:Status: Production
 :Citation: Cokelaer et al, (2017), ‘Sequana’: a Set of Snakemake NGS pipelines, Journal of Open Source Software, 2(16), 352, JOSS DOI doi:10.21105/joss.00352
 
 
@@ -17,6 +30,14 @@ You must install Sequana first::
 Then, just install this package::
 
     pip install sequana_multitax
+
+
+For all dependencies (see hereafter), you can use conda. Another experimental solution is to use damona::
+
+    pip install damona 
+    damona install sequana_tools
+
+This will install all required dependencies.
 
 
 Usage
@@ -61,14 +82,10 @@ Requirements
 
 This pipelines requires the following executable(s):
 
-- kraken and/or kraken2
+- kraken2
 - sequana_taxonomy
+- krona
 
-
-You cannot install both kraken1 and kraken2 together. We recommend to use the
-latest version::
-
-    conda install kraken2
 
 .. image:: https://raw.githubusercontent.com/sequana/multitax/master/sequana_pipelines/multitax/dag.png
 
@@ -95,7 +112,6 @@ you will be redirect to a more precise pie chart base on Krona pie chart, which
 is more interactive.
 
 .. image:: https://raw.githubusercontent.com/sequana/multitax/master/doc/images/piechart.png
-
 
 The analysis is enterily based on Kraken tool. If several databases are
 provided, they are run sequentially. This requires a careful interpretation of
