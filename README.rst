@@ -24,8 +24,8 @@ Usage
 
 ::
 
-    sequana_pipelines_multitax --help
-    sequana_pipelines_multitax --input-directory DATAPATH  --databases toydb
+    sequana_multitax --help
+    sequana_multitax --input-directory DATAPATH  --databases toydb
 
 For the database, you will need to provide your own databases. You can check out
 the documentation of kraken. The toydb here above is shipped with sequana and

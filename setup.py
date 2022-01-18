@@ -69,22 +69,18 @@ setup(
     classifiers      = metainfo['classifiers'],
 
     # package installation
-    packages = ["sequana_pipelines.multitax",
-        'sequana_pipelines.multitax.data' ],
-
+    packages = ["sequana_pipelines.multitax"],
     install_requires = open("requirements.txt").read(),
 
     # This is recursive include of data files
     exclude_package_data = {"": ["__pycache__"]},
     package_data = {
         '': ['*.yaml', "*.rules", "*.json", "requirements.txt", "*png"],
-        'sequana_pipelines.multitax.data' : ['*.*'], 
         },
 
     zip_safe=False,
 
     entry_points = {'console_scripts':[
-        'sequana_pipelines_multitax=sequana_pipelines.multitax.main:main',
         'sequana_multitax=sequana_pipelines.multitax.main:main']
     }
 

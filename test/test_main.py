@@ -11,7 +11,7 @@ krakendb = f"{test_dir}/data/krakendb"
 
 def test_standalone_subprocess():
     directory = tempfile.TemporaryDirectory()
-    cmd = f"""sequana_pipelines_multitax --input-directory {sharedir}
+    cmd = f"""sequana_multitax --input-directory {sharedir}
             --working-directory {directory.name} --force --databases {krakendb} """
     subprocess.call(cmd.split())
 
@@ -26,7 +26,7 @@ def test_standalone_script():
 
 
 def test_version():
-    cmd = "sequana_pipelines_multitax --version"
+    cmd = "sequana_multitax --version"
     subprocess.call(cmd.split())
 
 
