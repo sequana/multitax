@@ -23,7 +23,6 @@ configfile: "config.yaml"
 # ================================================== The sequana pipeline manager
 #
 manager = sm.PipelineManager("multitax", config)
-manager.setup(globals(), mode="warning")
 
 
 __taxonomy__output_summary = '{sample}/kraken/kraken.out.summary'
