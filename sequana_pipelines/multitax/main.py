@@ -100,6 +100,18 @@ class Options(argparse.ArgumentParser):
         return options
 
 
+def check_exists(filename, exit_on_error=True, warning_only=False):
+    if not os.path.exists(filename):
+        if warning_only:
+            logger.warning(f"{filename} file does not exists")
+        else:
+            logger.error(f"{filename} file does not exists")
+            if exit_on_error:
+                sys.exit(1)
+        return False
+    return True
+
+
 def main(args=None):
 
     if args is None:
@@ -138,12 +150,12 @@ def main(args=None):
         cfg.input_readtag = options.input_readtag
         cfg.input_directory = os.path.abspath(options.input_directory)
 
-        manager.exists(cfg.input_directory)
+        check_exists(cfg.input_directory)
 
         cfg['sequana_taxonomy']['level'] = options.kraken_level
-        cfg['sequana_taxonomy']['databases'] = options.databases
+        cfg['sequana_taxonomy']['databases'] = [os.path.abspath(x) for x in options.databases]
         for db in options.databases:
-            manager.exists(db)
+            check_exists(db)
         cfg['sequana_taxonomy']['confidence'] = options.kraken_confidence
         cfg['sequana_taxonomy']['store_unclassified'] = options.store_unclassified
 
