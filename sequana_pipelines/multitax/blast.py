@@ -247,7 +247,7 @@ def get_LCA(filename):
             elif len(taxid_unique) > 1:
 
                 # special case of eurkaryotic synthetic construct and human
-                if "111789" in taxid_unique and "9606" in taxid_unique:
+                if "111789" in taxid_unique or "9606" in taxid_unique:
                     taxid_LCA = "9604"
                     break
 

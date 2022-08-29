@@ -25,10 +25,7 @@ configfile: "config.yaml"
 manager = sm.PipelineManager("multitax", config)
 
 
-__taxonomy__output_summary = '{sample}/kraken/kraken.out.summary'
 __taxonomy__output_summary_json = '{sample}/kraken/summary.json'
-__taxonomy__output_html = '{sample}/summary.html'
-__taxonomy__output_csv = '{sample}/kraken/kraken.csv'
 
 
 expected_output = ["multiqc/multiqc_report.html",
@@ -40,6 +37,7 @@ if len(config['sequana_taxonomy']["databases"]) > 1:
 
 
 if config['blast']['do'] and not config['sequana_taxonomy']['store_unclassified']:
+    from sequana import logger
     logger.error("You set blast section so you must set sequana_taxonomy/store_unclassified to true in the configuration file")
     sys.exit(1)
 
@@ -72,42 +70,20 @@ def get_sequana_taxonomy_unclassified():
 rule sequana_taxonomy:
     input: manager.getrawdata()
     output:
-        html         = __taxonomy__output_html,
-        csv          = __taxonomy__output_csv,
-        summary      = __taxonomy__output_summary,
-        summary_json = __taxonomy__output_summary_json,
+        html         = '{sample}/summary.html',
+        csv          = '{sample}/kraken/kraken.csv',
+        summary      = '{sample}/kraken/kraken.out.summary',
+        summary_json = '{sample}/kraken/summary.json',
         unclassified = get_sequana_taxonomy_unclassified()
-    threads: config['sequana_taxonomy']['threads']
-    run:
-        outdir = output.html.split("/",1)[0]
-        cmd = "sequana_taxonomy --file1 {input[0]} "
-        if manager.paired:
-            cmd += " --file2 {input[1]} "
-
-        if config["sequana_taxonomy"]["confidence"] != 0:
-            cmd += " --confidence {} ".format(config["sequana_taxonomy"]["confidence"])
-
-        cmd += " --thread {} --databases".format(threads)
-        for this in config["sequana_taxonomy"]['databases']:
-            if this != "toydb":
-                assert os.path.exists(this), "databases {} does not exits".format(this)
-            cmd += " {} ".format(this)
-        cmd += " --output-directory {} --level {}".format(wildcards.sample, config['sequana_taxonomy']['level'])
-
-        # we will save the unclassified files whatsover
-        if config['sequana_taxonomy']['store_unclassified']:
-            if manager.paired:
-                cmd += " --unclassified-out unclassified#.fastq"  # this syntax replaces # with 1 and 2
-            else:
-                cmd += " --unclassified-out unclassified.fastq"
-        cmd += config['sequana_taxonomy']['options']
-
-        # even tough we do not save the unclassified, we want to create a dummy 
-        # file since this ouptut file is expected.
-        cmd += f" && touch {output.unclassified}"
-
-        shell(cmd)
-
+    threads:
+        config['sequana_taxonomy']['threads']
+    params:
+        paired=manager.paired
+    container:
+        "https://zenodo.org/record/5801365/files/kraken_2.0.9.img"
+        #"https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
+    script:
+        "run_sequana_taxonomy.py"
 
 # ================================================== Blast
 #
@@ -120,6 +96,8 @@ if config['blast']['do']:
         output: "{sample}/kraken/unclassified_subsample.fasta"
         params:
             nreads=config['blast']['nreads']
+        container:
+            "https://zenodo.org/record/6794508/files/sequana_tools_0.14.1.img"
         shell:
             """
             awk '{{if(NR%4==1) {{printf(">%s\\n",substr($0,2));}} else if(NR%4==2) print;}}' {input} | head -n {params.nreads} >  {output}   || echo "wierd"
@@ -134,6 +112,8 @@ if config['blast']['do']:
             db=os.environ['BLASTDB'] + os.sep + config['blast']['database'],
             fields="qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids"
         threads: 4
+        container:
+            "https://zenodo.org/record/6794508/files/sequana_tools_0.14.1.img"
         shell:
             """
             # requires BLASTDB to be defined !
@@ -158,6 +138,8 @@ if config['blast']['do']:
             "{sample}/blast/krona.txt"
         output:
             "{sample}/blast/text.krona.html"
+        container:
+            "https://zenodo.org/record/6794508/files/sequana_tools_0.14.1.img"
         shell:
             """
             ktImportText {input} -o {output}
@@ -189,7 +171,7 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
     __summary_plot_db__output_image = "outputs/proportion_dbs.png"
     __summary_plot_db__output_summary = "outputs/sequana_kraken_dbs_summary.json"
     rule summary_plot_db:
-        input: expand(__taxonomy__output_summary_json, sample=manager.samples)
+        input: expand('{sample}/kraken/summary.json', sample=manager.samples)
         output:
             image=__summary_plot_db__output_image,
             data = __summary_plot_db__output_summary
