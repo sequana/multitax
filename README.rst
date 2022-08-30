@@ -23,25 +23,28 @@ This is is the **multitax** pipeline from the `Sequana <https://sequana.readthed
 Installation
 ~~~~~~~~~~~~
 
-You must install Sequana first::
+If you already have all requirements, you can install the packages using pip::
 
-    pip install sequana
+    pip install sequana_multitax --upgrade
 
-Then, just install this package::
+Otherwise, you can create a *sequana_multitax* conda environment executing::
 
-    pip install sequana_multitax
+    conda env create -f environment.yml
 
+and later activate the environment::
 
-For all dependencies (see hereafter), you can use conda. Another experimental solution is to use damona::
+  conda activate sequana_multitax
 
-    pip install damona 
-    damona install sequana_tools
-
-This will install all required dependencies.
+A third option is to install the pipeline with pip method (see above) and use singularity as explained afterwards.
 
 
 Usage
 ~~~~~
+
+In order to use this pipeline, you will need Kraken databases. Please see Kraken pages for help.
+
+We will also need a taxonomic databases. In principle this pipeline will download the file in your home, in 
+/home/user/.config/sequana/taxonomy.dat one for all. Note, that with singularity, this file will be downloaded locally in your working directory for each analysis,except if it is found in your home, in which case a simple copy is performed.
 
 ::
 
@@ -75,7 +78,31 @@ retrieve the pipeline itself and its configuration files and then execute the pi
 
     snakemake -s multitax.rules -c config.yaml --cores 4 --stats stats.txt
 
-Or use `sequanix <https://sequana.readthedocs.io/en/master/sequanix.html>`_ interface.
+Or use `sequanix <https://sequana.readthedocs.io/en/main/sequanix.html>`_ interface.
+
+
+Usage with singularity::
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With singularity, initiate the working directory as follows::
+
+    sequana_multitax --use-singularity ...
+
+Images are downloaded in the working directory but you can store then in a directory globally (e.g.)::
+
+    sequana_multitax --use-singularity --singularity-prefix ~/.sequana/apptainers
+
+and then::
+
+    cd multitax
+    sh multitax.sh
+
+if you decide to use snakemake manually, do not forget to add singularity options::
+
+    snakemake -s multitax.rules -c config.yaml --cores 4 --stats stats.txt --use-singularity --singularity-prefix ~/.sequana/apptainers --singularity-args "-B /home:/home"
+
+    
+
 
 Requirements
 ~~~~~~~~~~~~
@@ -87,7 +114,7 @@ This pipelines requires the following executable(s):
 - krona
 
 
-.. image:: https://raw.githubusercontent.com/sequana/multitax/master/sequana_pipelines/multitax/dag.png
+.. image:: https://raw.githubusercontent.com/sequana/multitax/main/sequana_pipelines/multitax/dag.png
 
 You can download databases from kraken website. We provide some databases on
 https://github.com/sequana/resources. You can download a toy database as follows::
@@ -111,7 +138,7 @@ Colors correspond to a kingdom (green for viruses). If you click on the image,
 you will be redirect to a more precise pie chart base on Krona pie chart, which
 is more interactive.
 
-.. image:: https://raw.githubusercontent.com/sequana/multitax/master/doc/images/piechart.png
+.. image:: https://raw.githubusercontent.com/sequana/multitax/main/doc/images/piechart.png
 
 The analysis is enterily based on Kraken tool. If several databases are
 provided, they are run sequentially. This requires a careful interpretation of
@@ -122,7 +149,7 @@ results as compare to analysing with bacteria then viruses.
 Rules and configuration details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is the `latest documented configuration file <https://raw.githubusercontent.com/sequana/multitax/master/sequana_pipelines/multitax/config.yaml>`_
+Here is the `latest documented configuration file <https://raw.githubusercontent.com/sequana/multitax/main/sequana_pipelines/multitax/config.yaml>`_
 to be used with the pipeline. Each rule used in the pipeline may have a section in the configuration file. 
 
 Changelog
@@ -131,6 +158,7 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.10.2    * add singularity containers
 0.10.1    * fix blast run when no taxid is found and HTML report
 0.10.0    * uses new sequana wrappers and framework
           * add ability to run blast on unclassified reads

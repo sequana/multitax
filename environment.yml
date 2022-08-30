@@ -1,0 +1,15 @@
+name: sequana_variant_calling
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - kraken2
+  - krona
+  - pip
+  - pip:
+    - sequana
+
+
