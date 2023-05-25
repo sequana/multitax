@@ -13,6 +13,8 @@ mapping:
         type: str
         required: False
 
+    "apptainers":
+      type: any
 
     "sequana_taxonomy":
         type: map

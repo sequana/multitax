@@ -1,15 +1,18 @@
 
-
 .. image:: https://badge.fury.io/py/sequana-multitax.svg
      :target: https://pypi.python.org/pypi/sequana_multitax
 
-.. image:: http://joss.theoj.org/papers/10.21105/joss.00352/status.svg
-    :target: http://joss.theoj.org/papers/10.21105/joss.00352
-    :alt: JOSS (journal of open source software) DOI
 
 .. image:: https://github.com/sequana/multitax/actions/workflows/main.yml/badge.svg
    :target: https://github.com/sequana/multitax/actions/workflows/main.yaml 
 
+.. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C3.10-blue.svg
+    :target: https://pypi.python.org/pypi/sequana
+    :alt: Python 3.8 | 3.9 | 3.10
+
+.. image:: http://joss.theoj.org/papers/10.21105/joss.00352/status.svg
+    :target: http://joss.theoj.org/papers/10.21105/joss.00352
+    :alt: JOSS (journal of open source software) DOI
 
 This is is the **multitax** pipeline from the `Sequana <https://sequana.readthedocs.org>`_ project
 
@@ -26,16 +29,6 @@ Installation
 If you already have all requirements, you can install the packages using pip::
 
     pip install sequana_multitax --upgrade
-
-Otherwise, you can create a *sequana_multitax* conda environment executing::
-
-    conda env create -f environment.yml
-
-and later activate the environment::
-
-  conda activate sequana_multitax
-
-A third option is to install the pipeline with pip method (see above) and use singularity as explained afterwards.
 
 
 Usage
@@ -101,8 +94,6 @@ if you decide to use snakemake manually, do not forget to add singularity option
 
     snakemake -s multitax.rules -c config.yaml --cores 4 --stats stats.txt --use-singularity --singularity-prefix ~/.sequana/apptainers --singularity-args "-B /home:/home"
 
-    
-
 
 Requirements
 ~~~~~~~~~~~~
@@ -158,6 +149,9 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.11.0    * use latest wrappers and graphivz apptainer
+          * create and use a sequana-wrappers for the sequana_taxonomy ruke
+          * fix type when downloading taxonomy.dat
 0.10.2    * add singularity containers
 0.10.1    * fix blast run when no taxid is found and HTML report
 0.10.0    * uses new sequana wrappers and framework

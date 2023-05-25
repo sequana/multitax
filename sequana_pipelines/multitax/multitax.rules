@@ -26,6 +26,8 @@ configfile: "config.yaml"
 #
 manager = sm.PipelineManager("multitax", config)
 
+sequana_wrapper_branch = "main"
+
 
 __taxonomy__output_summary_json = '{sample}/kraken/summary.json'
 
@@ -82,7 +84,7 @@ def get_sequana_taxonomy_inputs():
     if workflow.use_singularity:
 
         home = Path(".").home()
-        if (home / Path(".config/sequana/taxonomy.da")).exists():
+        if (home / Path(".config/sequana/taxonomy.dat")).exists():
             os.makedirs(".config/", exist_ok=True)
             os.makedirs(".config/sequana", exist_ok=True)
             shell("cp ~/.config/sequana/taxonomy.dat .config/sequana/")
@@ -91,7 +93,7 @@ def get_sequana_taxonomy_inputs():
                 input:
                 output: ".config/sequana/taxonomy.dat"
                 container:
-                    "https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
+                    config["apptainers"]["sequana_tools"]
                 shell:
                     """
                     sequana_taxonomy --update-taxonomy
@@ -102,7 +104,7 @@ def get_sequana_taxonomy_inputs():
         return manager.getrawdata(),
 
 rule sequana_taxonomy:
-    input: 
+    input:
         get_sequana_taxonomy_inputs()
     output:
         html         = '{sample}/summary.html',
@@ -113,14 +115,18 @@ rule sequana_taxonomy:
     threads:
         config['sequana_taxonomy']['threads']
     params:
-        paired=manager.paired
+        # required
+        paired=manager.paired,
+        databases=config["sequana_taxonomy"]["databases"],
+        store_unclassified=config["sequana_taxonomy"]["store_unclassified"],
+        # optional
+        confidence=config["sequana_taxonomy"].get("confidence", 0),
+        level=config["sequana_taxonomy"].get("level", "INFO"),
+        options=config["sequana_taxonomy"].get("options", "")
     container:
-        # This is mostly kraken2, but everything wrapped within sequana
-        # so we need both !
-        #"https://zenodo.org/record/5801365/files/kraken_2.0.9.img"
-        "https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
-    script:
-        "run_sequana_taxonomy.py"
+        config["apptainers"]["sequana_tools"]
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/sequana_taxonomy"
 
 # ================================================== Blast
 #
@@ -134,7 +140,7 @@ if config['blast']['do']:
         params:
             nreads=config['blast']['nreads']
         container:
-            "https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
+            config["apptainers"]["sequana_tools"]
         shell:
             """
             awk '{{if(NR%4==1) {{printf(">%s\\n",substr($0,2));}} else if(NR%4==2) print;}}' {input} | head -n {params.nreads} >  {output}   || echo "wierd"
@@ -150,7 +156,7 @@ if config['blast']['do']:
             fields="qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids"
         threads: 4
         container:
-            "https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
+            config["apptainers"]["sequana_tools"]
         shell:
             """
             # requires BLASTDB to be defined !
@@ -176,8 +182,7 @@ if config['blast']['do']:
         output:
             "{sample}/blast/text.krona.html"
         container:
-            "https://zenodo.org/record/7031863/files/sequana_tools_0.14.2.img"
-            "https://zenodo.org/record/6794508/files/sequana_tools_0.14.1.img"
+            config["apptainers"]["sequana_tools"]
         shell:
             """
             ktImportText {input} -o {output}
@@ -211,8 +216,8 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
         input:
             expand('{sample}/kraken/summary.json', sample=manager.samples)
         output:
-            image="outputs/proportion_dbs.png"
-            data ="outputs/sequana_kraken_dbs_summary.json"
+            image="outputs/proportion_dbs.png",
+            data="outputs/sequana_kraken_dbs_summary.json"
         run:
             from sequana import MultiKrakenResults2
             k = MultiKrakenResults2(input, manager.samples)
@@ -235,59 +240,52 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
 
 
 
-"""
-# ================================================== dendogram not useful but
-# kept for book-keeping
-# 
-rule dendogram:
-    input: "outputs/sequana_kraken_summary.json"
-    output: "outputs/dendogram.png"
-    params:
-        sample_file=config["dendogram"]["sample_file"]
-    run:
-        data = json.loads(open(input[0], "r").read())
-        import pandas as pd
-        import pylab
-        df = pd.DataFrame(data)
-        if len(manager.samples.keys()) == 1:
-            data = sequana_data("no_data.png")
-            import shutil
-            shutil.copy(data, output[0])
-            return
-
-        from sequana.viz.heatmap import Heatmap
-        h = Heatmap(df.fillna(0))
-
-        if params.sample_file:
-            df = pd.read_csv(params.sample_file)
-            codes =  pd.Categorical(df.category).codes
-            df['codes'] = codes
-            #for sample, category in zip(df['sample'], df['category']):
-            for sample, category in zip(df['sample'], df['codes']):
-                h.category_column[sample] = category
-        try:
-            h.plot(colorbar_position="top left")
-            pylab.savefig(output[0], dpi=200)
-            with open("outputs/dendogram.info", "w") as fout:
-                fout.write("ok")
-        except:
-            data = sequana_data("no_data.png")
-            import shutil
-            shutil.copy(data, output[0])
-            with open("outputs/dendogram.info", "w") as fout:
-                fout.write("failed")
-"""
 
 # ========================================================== multiqc
-#
-sequana_multiqc_input = expand("{sample}/kraken/kraken.csv", sample=sorted(manager.samples))
-include: sm.modules["multiqc/2.0"]
 
+multiqc_params_options = config['multiqc']['options']
+if manager.config.multiqc.config_file:
+    multiqc_params_options += f" -c {manager.config.multiqc.config_file}"
+
+rule multiqc:
+    input:
+        expand("{sample}/kraken/kraken.csv", sample=sorted(manager.samples))
+    output:
+       "multiqc/multiqc_report.html"
+    params:
+        options=multiqc_params_options,
+        input_directory=config['multiqc']['input_directory'],
+        config_file=config['multiqc']['config_file'],
+        modules=config['multiqc']['modules']
+    log:
+        "multiqc/multiqc.log"
+    wrapper:
+       f"{sequana_wrapper_branch}/wrappers/multiqc"
 
 # ========================================================== rulegraph
+rule rulegraph:
+    input: str(manager.snakefile)
+    output:
+        svg = "rulegraph/rulegraph.dot"
+    params:
+        mapper = {"multiqc": "../multiqc/multiqc_report.html"},
+        configname = "config.yaml"
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/rulegraph"
+
+
+rule dot2svg:
+    input:
+        "rulegraph/rulegraph.dot"
+    output:
+        ".sequana/rulegraph.svg"
+    container:
+        config['apptainers']['graphviz']
+    shell:
+        """dot -Tsvg {input} -o {output}"""
+
+
 #
-sequana_rulegraph_mapper = {"multiqc": "../multiqc/multiqc_report.html"}
-include: sm.modules['rulegraph']
 
 
 # Those rules takes a couple of seconds so no need for a cluster
