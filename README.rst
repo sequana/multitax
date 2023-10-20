@@ -149,6 +149,8 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.11.1    * add missing import in the main script
+          * add wrapper version in config
 0.11.0    * use latest wrappers and graphivz apptainer
           * create and use a sequana-wrappers for the sequana_taxonomy ruke
           * fix type when downloading taxonomy.dat

@@ -26,10 +26,6 @@ configfile: "config.yaml"
 #
 manager = sm.PipelineManager("multitax", config)
 
-sequana_wrapper_branch = "main"
-
-
-__taxonomy__output_summary_json = '{sample}/kraken/summary.json'
 
 
 expected_output = ["multiqc/multiqc_report.html",
@@ -103,6 +99,7 @@ def get_sequana_taxonomy_inputs():
     else:
         return manager.getrawdata(),
 
+
 rule sequana_taxonomy:
     input:
         get_sequana_taxonomy_inputs()
@@ -126,7 +123,7 @@ rule sequana_taxonomy:
     container:
         config["apptainers"]["sequana_tools"]
     wrapper:
-        f"{sequana_wrapper_branch}/wrappers/sequana_taxonomy"
+        f"{manager.wrappers}/wrappers/sequana_taxonomy"
 
 # ================================================== Blast
 #
@@ -165,7 +162,9 @@ if config['blast']['do']:
             """
 
     rule blast_analysis:
-        input: "{sample}/blast/blast.tsv"
+        input: 
+            rule.blast_fasta.output[0]
+            # "{sample}/blast/blast.tsv"
         output:
             "{sample}/blast/blast_summary.csv",
             "{sample}/blast/krona.txt"
@@ -198,6 +197,8 @@ rule summary_plot:
         data = "outputs/sequana_kraken_summary.json"
     run:
         from sequana import MultiKrakenResults, MultiKrakenResults2
+        import json
+
         k = MultiKrakenResults(input, sample_names=sorted(manager.samples))
         k.plot_stacked_hist(output.image, dpi=200,
             kind=config["summary_plot"]["kind"],
@@ -207,9 +208,9 @@ rule summary_plot:
             max_labels=config['summary_plot']["max_labels"],
             edgecolor=config['summary_plot']["edgecolor"],
             )
-        import json
         with open(output.data, "w") as fout:
              json.dump(k.get_df().to_dict(), fout, indent=True, sort_keys=True)
+
 
 if len(config["sequana_taxonomy"]["databases"]) > 1:
     rule summary_plot_db:
@@ -219,12 +220,15 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
             image="outputs/proportion_dbs.png",
             data="outputs/sequana_kraken_dbs_summary.json"
         run:
+            import json
             from sequana import MultiKrakenResults2
+
             k = MultiKrakenResults2(input, manager.samples)
             if len(config['summary_plot_db']["colors"]) == 0:
                 colors = None
             else:
                 colors = config['summary_plot_db']["colors"]
+
             k.plot_stacked_hist(output.image, dpi=200,
                 ytick_fontsize=config['summary_plot_db']["yticks_fontsize"],
                 lw=config['summary_plot_db']["linewidth"],
@@ -233,12 +237,9 @@ if len(config["sequana_taxonomy"]["databases"]) > 1:
                 alpha=config['summary_plot_db']["alpha"],
                 colors=colors,
                 cmap=config['summary_plot_db']["colormap"])
-            import json
+
             with open(output.data, "w") as fout:
                  json.dump(k.get_df().to_dict(), fout, indent=True, sort_keys=True)
-
-
-
 
 
 # ========================================================== multiqc
@@ -260,18 +261,20 @@ rule multiqc:
     log:
         "multiqc/multiqc.log"
     wrapper:
-       f"{sequana_wrapper_branch}/wrappers/multiqc"
+       f"{manager.wrappers}/wrappers/multiqc"
+
 
 # ========================================================== rulegraph
 rule rulegraph:
-    input: str(manager.snakefile)
+    input: workflow.snakefile
     output:
         svg = "rulegraph/rulegraph.dot"
     params:
         mapper = {"multiqc": "../multiqc/multiqc_report.html"},
         configname = "config.yaml"
     wrapper:
-        f"{sequana_wrapper_branch}/wrappers/rulegraph"
+        f"{manager.wrappers}/wrappers/rulegraph"
+
 
 
 rule dot2svg:

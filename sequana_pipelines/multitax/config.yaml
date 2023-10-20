@@ -5,6 +5,7 @@
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
 # ============================================================================
+sequana_wrappers: "v0.15.1"
 
 
 input_directory: 
