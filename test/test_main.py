@@ -4,6 +4,9 @@ import tempfile
 import subprocess
 import sys
 from . import test_dir
+from click.testing import CliRunner
+from sequana_pipelines.multitax.main import main
+
 
 sharedir = f"{test_dir}/data"
 krakendb = f"{test_dir}/data/krakendb"
@@ -18,10 +21,11 @@ def test_standalone_subprocess():
 
 def test_standalone_script():
     directory = tempfile.TemporaryDirectory()
-    import sequana_pipelines.multitax.main as m
-    from sequana import sequana_config_path
-    sys.argv = ["test", "--input-directory", sharedir, "--working-directory", directory.name, "--force", "--databases", krakendb]
-    m.main()
+
+    runner = CliRunner()
+    results = runner.invoke(main, ["--input-directory", sharedir, "--working-directory", directory.name, "--force",
+"--databases", krakendb])
+    assert results.exit_code == 0
 
 
 
