@@ -260,6 +260,8 @@ rule multiqc:
         modules=config['multiqc']['modules']
     log:
         "multiqc/multiqc.log"
+    container:
+        config["apptainers"]["multiqc"]
     wrapper:
        f"{manager.wrappers}/wrappers/multiqc"
 
@@ -305,7 +307,7 @@ onsuccess:
     manager.clean_multiqc("multiqc/multiqc_report.html")
 
     # main HTML report:
-    from sequana.modules_report.summary import SummaryModule2
+    from sequana.modules_report.summary import SequanaReport
     from sequana.modules_report.kraken import KrakenModule
 
     intro = """<h2>General Information</h2>{}""".format(manager.get_html_summary())
@@ -332,7 +334,7 @@ onsuccess:
                or here below as a CSV file.<br></p>
     """
 
-    img = SummaryModule2.png_to_embedded_png("dummy_self", "outputs/proportion_kraken.png",
+    img = SequanaReport.png_to_embedded_png("dummy_self", "outputs/proportion_kraken.png",
         style="max-height:60%; max-width:80%", title="Kingdom proportion (and unclassified) for each sample")
     intro += img + "</div>"
 
@@ -341,7 +343,7 @@ onsuccess:
             <div style="width:48%; float:right"><p>Proportion of reads found in each databases is shown here below. The underlying data can be found
 in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.json</a> file or as a CSV file herebelow.<br></p>
         """
-        img = SummaryModule2.png_to_embedded_png("dummy_self", "outputs/proportion_dbs.png",
+        img = SequanaReport.png_to_embedded_png("dummy_self", "outputs/proportion_dbs.png",
                     style="max-height:60%; max-width:80%", title="DB proportion (and unclassified) per sample")
         intro += img + "</div>"
 
@@ -408,7 +410,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
 
     # now include the pie images
     for sample in sorted(manager.samples):
-        image = SummaryModule2.png_to_embedded_png("self_dummy",
+        image = SequanaReport.png_to_embedded_png("self_dummy",
                     "{}/kraken/kraken.png".format(sample),
                     style="align:center; width:30%; height:30%", alt=sample, title=sample)
         intro += '<a href="{}/summary.html">'.format(sample) + image + '</a>'
@@ -424,13 +426,12 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     except Exception:
         pass
 
-    s = SummaryModule2(data, intro=intro)
+    data = manager.getmetadata()
+    s = SequanaReport(data, intro=intro)
 
     shell("chmod -R g+w .")
     shell("rm -rf rulegraph")
 
 onerror:
-    from sequana_pipetools.errors import PipeError
-    p = PipeError("multitax")
-    p.status()
+    manager.onerror()
 

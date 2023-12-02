@@ -5,7 +5,7 @@
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
 # ============================================================================
-sequana_wrappers: "v0.15.1"
+sequana_wrappers: "v23.11.18"
 
 
 input_directory: 
@@ -13,8 +13,9 @@ input_readtag: _R[12]_
 input_pattern: "*fastq.gz"
 
 apptainers:
-  sequana_tools: "https://zenodo.org/record/7963917/files/sequana_tools_0.15.1.img"
-  graphviz: "https://zenodo.org/record/7928262/files/graphviz_7.0.5.img"
+    sequana_tools: https://zenodo.org/record/7963917/files/sequana_tools_0.15.1.img
+    graphviz: https://zenodo.org/record/7928262/files/graphviz_7.0.5.img
+    multiqc: https://zenodo.org/record/10205070/files/multiqc_1.16.0.img
 
 
 ##############################################################################
@@ -25,7 +26,7 @@ apptainers:
 # - databases: list of kraken databases to be used
 sequana_taxonomy:
     databases:
-        - 
+        -
     level: INFO
     confidence: 0
     store_unclassified: true
