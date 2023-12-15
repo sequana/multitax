@@ -52,6 +52,10 @@ jobs:
 
     - name: testing
       run: |
+        # FIXME sequana 0.16.5 should fix this creation
+        mkdir -p ~/.config
+        mkdir -p ~/.config/sequana
+        mkdir -p ~/.config/sequana/kraken2_dbs
         sequana_taxonomy  --download toydb
         sequana_multitax --input-directory test/data/  --use-apptainer --databases ~/.config/sequana/kraken2_dbs/toydb && cd multitax && sh multitax.sh
 

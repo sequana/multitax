@@ -294,7 +294,7 @@ rule dot2svg:
 
 
 # Those rules takes a couple of seconds so no need for a cluster
-localrules: multiqc, rulegraph, summary_plot, download_taxonomy
+localrules: multiqc, rulegraph, summary_plot
 
 
 onsuccess:
@@ -309,6 +309,7 @@ onsuccess:
     # main HTML report:
     from sequana.modules_report.summary import SequanaReport
     from sequana.modules_report.kraken import KrakenModule
+    from sequana.utils.datatables_js import DataTable
 
     intro = """<h2>General Information</h2>{}""".format(manager.get_html_summary())
     intro += """<div style="width:80%">This pipeline summarizes the taxonomic analysis
@@ -350,7 +351,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
         from sequana import MultiKrakenResults2
         k = MultiKrakenResults2(["{}/kraken/summary.json".format(x) for x in manager.samples],
             manager.samples)
-        from sequana.utils.datatables_js import DataTable
+
         df = k.get_df()
         links = ["""{}/summary.html""".format(sample) for sample in df.columns]
         df = df.T
@@ -371,7 +372,7 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     from sequana import MultiKrakenResults
     k = MultiKrakenResults(["{}/kraken/kraken.csv".format(x) for x in manager.samples],
         manager.samples)
-    from sequana.utils.datatables_js import DataTable
+
     df = k.get_df()
     links = ["""{}/summary.html""".format(sample) for sample in df.columns]
     df = df.T
@@ -389,7 +390,8 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     htmltable = datatable.create_datatable(float_format="%0.3f")
     intro += """<div style="clear:both"><hr>"""+js + htmltable + "</div>"
 
-    # Individual reports
+    # ========================================================================= Individual reports
+    # 
     intro +="""
     <h2>Individual taxonomic reports <a id="kraken"></a></h2>
     <div style="width:80%">Each of the sample ({} in total) was analysed independently using {} databases. Here below you can find the links towards each analysis. You can either click on the link or the image to open a new report. The report includes a table with all taxon found as well as their full lineage as provided by Kraken analysis tool. A dynamic plot based on Kroan allows you to explore the results interactively. </div>
@@ -398,15 +400,8 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
     intro += "<ul>"
     for sample in sorted(manager.samples):
         intro += """<li><a href="{}/summary.html">{} individual report</a></li>""".format(sample, sample)
-
     intro += "</ul>"
 
-    from sequana_pipelines import multitax
-    data = {"name": "multitax",
-            "rulegraph": ".sequana/rulegraph.svg",
-            "stats": "stats.txt",
-            "pipeline_version": multitax.version
-            }
 
     # now include the pie images
     for sample in sorted(manager.samples):
@@ -415,22 +410,14 @@ in <a href="outputs/sequana_kraken_dbs_summary.json">sequana_kraken_dbs_summary.
                     style="align:center; width:30%; height:30%", alt=sample, title=sample)
         intro += '<a href="{}/summary.html">'.format(sample) + image + '</a>'
 
-    # Now the final report. add the original command in the HTML report
-    try:
-        command = ""
-        with open(".sequana/info.txt", "r") as fin:
-            for line in fin:
-                if not line.startswith("#"):
-                     command += line
-        intro += f"<h2>Command used</h2>{command}"
-    except Exception:
-        pass
-
     data = manager.getmetadata()
     s = SequanaReport(data, intro=intro)
 
+    # cleanup
     shell("chmod -R g+w .")
     shell("rm -rf rulegraph")
+    shell("rm -rf */kraken/kraken.out")
+
 
 onerror:
     manager.onerror()
