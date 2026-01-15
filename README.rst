@@ -149,6 +149,9 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.14.0    * updated container and sequana to fix issue with sequential
+            analysis (several DBs)
+0.13.0    * new containerisaton
 0.12.2    * switch apptainer for sequana_taxonomy to the apptainer sequana
           * Fix version of sequana_wrappers to v23.12.5
           * add precommit

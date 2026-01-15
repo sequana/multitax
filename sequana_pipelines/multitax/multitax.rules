@@ -298,7 +298,8 @@ rule dot2svg:
 
 
 # Those rules takes a couple of seconds so no need for a cluster
-localrules: multiqc, rulegraph, summary_plot
+localrules: multiqc, rulegraph, summary_plot, download_taxonomy
+
 
 
 onsuccess:
